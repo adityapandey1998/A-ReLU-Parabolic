@@ -16,25 +16,25 @@ import os
 from keras.layers import Layer
 from keras import backend as K
 
-def A_ReLU_Para(x):
+def SBAF_Para(x):
     return 1 - x + K.pow(x, 2)
 
 
-class A_ReLU_Para_Class(Layer):
+class SBAF_Para_Class(Layer):
 
     def __init__(self, **kwargs):
-        super(A_ReLU_Para_Class, self).__init__(**kwargs)
+        super(SBAF_Para_Class, self).__init__(**kwargs)
         self.supports_masking = True
 
     def build(self, input_shape):
-        super(A_ReLU_Para_Class, self).build(input_shape)
+        super(SBAF_Para_Class, self).build(input_shape)
 
     def call(self, inputs, mask=None):
-        return A_ReLU_Para(inputs)
+        return SBAF_Para(inputs)
 
     def get_config(self):
         config = {'trainable': self.trainable}
-        base_config = super(A_ReLU_Para_Class, self).get_config()
+        base_config = super(SBAF_Para_Class, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
     def compute_output_shape(self, input_shape):
@@ -79,7 +79,7 @@ model.add(Dropout(0.25))
 model.add(Flatten())
 model.add(Dense(512))
 # model.add(Activation('relu'))
-model.add(Activation(A_ReLU_Para))
+model.add(Activation(SBAF_Para))
 model.add(Dropout(0.5))
 model.add(Dense(num_classes))
 model.add(Activation('softmax'))
