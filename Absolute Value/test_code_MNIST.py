@@ -5,6 +5,8 @@ Created on Wed Mar 25 00:01:49 2020
 
 @author: adityapandey
 """
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import tensorflow as tf
 from sklearn.metrics import confusion_matrix

@@ -7,6 +7,9 @@ import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt

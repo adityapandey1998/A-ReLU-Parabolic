@@ -5,7 +5,8 @@ Created on Mon Nov 25 19:39:03 2019
 
 @author: adityapandey
 """
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 import numpy as np

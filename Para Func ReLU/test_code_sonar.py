@@ -5,10 +5,11 @@ Created on Wed Apr  8 21:23:38 2020
 
 @author: adityapandey
 """
-
 import os
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 import numpy as np

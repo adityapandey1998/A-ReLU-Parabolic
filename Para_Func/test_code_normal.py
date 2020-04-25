@@ -5,15 +5,8 @@ Created on Sun Feb 16 21:16:34 2020
 
 @author: adityapandey
 """
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov 25 19:39:03 2019
-
-@author: adityapandey
-"""
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 import numpy as np

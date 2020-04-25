@@ -6,6 +6,8 @@ Created on Tue Mar 24 19:11:38 2020
 @author: adityapandey
 """
 from __future__ import print_function
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import keras
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator

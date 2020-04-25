@@ -8,7 +8,8 @@ Created on Mon Nov 25 12:38:52 2019
 
 from sklearn.utils import resample
 
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import pandas as pd
 import numpy as np
