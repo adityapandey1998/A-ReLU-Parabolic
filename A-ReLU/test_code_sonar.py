@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 25 23:19:24 2019
+Created on Wed Apr  8 20:38:49 2020
 
 @author: adityapandey
 """
 
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 import pandas as pd
 import numpy as np
@@ -16,64 +19,31 @@ from sklearn.model_selection import train_test_split
 
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from sklearn.metrics import confusion_matrix
-from sklearn.utils import resample
 import matplotlib.pyplot as plt
+import itertools
 
-#import AReLU
-import Leaky_AReLU as AReLU
+import AReLU
+#import Leaky_AReLU as AReLU
 
-#AReLU.set_kn(1.0, 1.0)
-AReLU.set_kn(0.94, 1.1)
-#AReLU.set_kn(1.06, 1.1)
+AReLU.set_kn(1.0, 1.0)
+AReLU.set_kn(1.06, 1.1)
 
-seed = 128
+seed = 1
 rng = np.random.RandomState(seed)
 
-phL_EC = pd.read_csv('../Datasets/pHL_EC.csv')
-phL_EC.drop(['Index','P. Name'], axis=1, inplace=True)
-phL_EC['P. Habitable Class'] = phL_EC['P. Habitable Class'].astype(str)
-phL_EC = phL_EC.loc[phL_EC['P. Habitable Class'].isin(["non-habitable", "mesoplanet", "psychroplanet"])]
+HCV = pd.read_csv('../Datasets/sonar.csv')
 
+print("Columns: ", HCV.columns)
 
+HCV['Class'] = HCV['Class'].astype(str)
 
-df_minority1 = phL_EC[phL_EC['P. Habitable Class']=='mesoplanet']
-df_minority2 = phL_EC[phL_EC['P. Habitable Class']=='psychroplanet']
-df_majority = phL_EC[phL_EC['P. Habitable Class']=='non-habitable']
+print(HCV['Class'].value_counts())
 
-df_majority_downsampled = resample(df_majority, 
-                                 replace=False,     
-                                 n_samples=500,    
-                                 random_state=123)
+categories = HCV['Class']
 
-df_minority1_upsampled = resample(df_minority1, 
-                                 replace=True,     
-                                 n_samples=70,    
-                                 random_state=123)
-
-df_minority2_upsampled = resample(df_minority2, 
-                                 replace=True,     
-                                 n_samples=48,    
-                                 random_state=123)
-
-#phL_EC = pd.concat([df_majority, df_minority1_upsampled, df_minority2_upsampled])
-
-phL_EC = pd.concat([df_majority_downsampled, df_minority1_upsampled, df_minority2_upsampled])
-
-star_feat = ['S. Hab Zone Min (AU)', 'S. Hab Zone Max (AU)', 'S. Luminosity (SU)', 'S. Mass (SU)', 'S. Radius (SU)', 'S. Teff (K)', 'P. Habitable Class']
-
-set_1 = star_feat + ['P. Radius (EU)']
-set_2 = star_feat + ['P. Mass (EU)']
-set_3 = star_feat + ['P. Min Mass (EU)']
-
-set_4 = ['P. Min Mass (EU)', 'P. Mass (EU)', 'P. Max Mass (EU)', 'P. Radius (EU)', 'P. Density (EU)', 'P. Gravity (EU)', 'S. Mass (SU)', 'S. Radius (SU)', 'S. Teff (K)', 'S. Luminosity (SU)',  'P. Habitable Class']
-
-phL_EC_feat = phL_EC[set_2]
-
-categories = phL_EC['P. Habitable Class']
-#print(categories.value_counts())
 num_cat = len(categories.value_counts())
 
 values = np.array(categories)
@@ -86,22 +56,18 @@ labels = pd.DataFrame(onehot_encoded)
 
 #print(label_encoder.classes_)
 
-data = phL_EC_feat.drop('P. Habitable Class', axis=1)
+data = HCV.drop('Class', axis=1)
 
 data.fillna(0, inplace=True)
 
-X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, random_state=4, stratify=labels)
+X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.25, random_state=5, stratify=labels)
 
-
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 scaler.fit(X_train)
 X_train = pd.DataFrame(scaler.transform(X_train))
 X_test = pd.DataFrame(scaler.transform(X_test))
-#print(X_train.shape, y_train.shape,y_test.shape )
-
 
 def batch_creator(batch_size, dataset_length, dataset_name):
-    """Create batch with random samples and return appropriate format"""
     batch_mask = rng.choice(dataset_length, batch_size)
     
     batch_x = eval('X_'+dataset_name).iloc[batch_mask].values
@@ -115,7 +81,7 @@ def batch_creator(batch_size, dataset_length, dataset_name):
 
 # number of neurons in each layer
 input_num_units = X_train.shape[1]
-hidden_num_units1 = 5
+hidden_num_units1 = 20
 hidden_num_units2 = 20
 output_num_units = num_cat
 
@@ -124,23 +90,26 @@ x = tf.placeholder(tf.float32, [None, input_num_units])
 y = tf.placeholder(tf.float32, [None, output_num_units])
 
 # set remaining variables
-epochs = 500
+epochs = 1000
 batch_size = X_train.shape[0]
-#batch_size = 512
-learning_rate = 0.08
+batch_size = 256
+learning_rate = 0.001
 
-### define weights and biases of the neural network (refer this article if you don't understand the terminologies)
+### define weights and biases of the neural network
 
 weights = {
     'hidden1': tf.Variable(tf.random_normal([input_num_units, hidden_num_units1], seed=seed)),
-    'output': tf.Variable(tf.random_normal([hidden_num_units1, output_num_units], seed=seed))
+    'hidden2': tf.Variable(tf.random_normal([hidden_num_units1, hidden_num_units2], seed=seed)),
+    'output': tf.Variable(tf.random_normal([hidden_num_units2, output_num_units], seed=seed))
 }
 
 biases = {
     'hidden1': tf.Variable(tf.random_normal([hidden_num_units1], seed=seed)),
+    'hidden2': tf.Variable(tf.random_normal([hidden_num_units2], seed=seed)),
     'output': tf.Variable(tf.random_normal([output_num_units], seed=seed))
 }
 
+'''
 weights = {
     'hidden1': tf.Variable(tf.random_uniform([input_num_units, hidden_num_units1], seed=seed)),
     'output': tf.Variable(tf.random_uniform([hidden_num_units1, output_num_units], seed=seed))
@@ -150,15 +119,19 @@ biases = {
     'hidden1': tf.Variable(tf.random_uniform([hidden_num_units1], seed=seed)),
     'output': tf.Variable(tf.random_uniform([output_num_units], seed=seed))
 }
-
+'''
 
 hidden_layer1 = tf.add(tf.matmul(x, weights['hidden1']), biases['hidden1'])
 hidden_layer1 = AReLU.tf_ARelu(hidden_layer1)
 
+hidden_layer2 = tf.add(tf.matmul(hidden_layer1, weights['hidden2']), biases['hidden2'])
+#hidden_layer2 = tf.nn.sigmoid(hidden_layer2)
+
+
 output_layer = tf.add(tf.matmul(hidden_layer1, weights['output']), biases['output'])
 
 logits = output_layer
-prediction = tf.nn.softmax(logits)
+prediction = tf.nn.sigmoid(logits)
 
 # Define loss and optimizer
 loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y))
@@ -176,6 +149,8 @@ pred = []
 actual = []
 
 loss_vals=[[],[]]
+
+print("\nTraining....")
 
 with tf.Session() as sess:
 
@@ -195,54 +170,20 @@ with tf.Session() as sess:
 
     print("Optimization Finished!")
 
-    print("Testing Accuracy:", sess.run(accuracy, feed_dict={x: X_train, y: y_train}))
+    #print("Testing Accuracy:", sess.run(accuracy, feed_dict={x: X_train, y: y_train}))
     
     
     pred.append(tf.argmax(output_layer, 1).eval({x: X_test, y: y_test}))
     actual.append(tf.argmax(y, 1).eval({y: y_test}))
-    
-'''
-AReLU.set_kn(0.54, 1.3)
-AReLU.set_kn(0.83, 1.12)
-loss_vals2=[[],[]]
-
-with tf.Session() as sess:
-
-    sess.run(init)
-
-    for step in range(1, epochs+1):
-        batch_x, batch_y = batch_creator(batch_size, X_train.shape[0], 'train')
-
-        sess.run(train_op, feed_dict={x: batch_x, y: batch_y})
-        if step % display_step == 0 or step == 1:
-
-            loss, acc = sess.run([loss_op, accuracy], feed_dict={x: batch_x,
-                                                                 y: batch_y})
-            #print("Step " + str(step) + ", Minibatch Loss= " + "{:.4f}".format(loss) + ", Training Accuracy= " + "{:.3f}".format(acc))
-            loss_vals2[0].append(step)
-            loss_vals2[1].append(loss)
-
-    print("Optimization Finished!")
-
-    print("Testing Accuracy:", sess.run(accuracy, feed_dict={x: X_train, y: y_train}))
-    
-    
-    pred.append(tf.argmax(output_layer, 1).eval({x: X_test, y: y_test}))
-    actual.append(tf.argmax(y, 1).eval({y: y_test}))
-    
-'''
-    
-#pred = list(pred[0])
-    
+        
+'''    
 fig = plt.figure()
 ax = plt.axes()
 
 ax.plot(loss_vals[0], np.clip(loss_vals[1], 0, 1000))
-#ax.plot(loss_vals2[0], np.clip(loss_vals2[1], 0, 1000))
+'''
 
-
-cm = confusion_matrix(list(actual[0]), list(pred[0]), labels=[0, 1, 2])
-
+cm = confusion_matrix(list(actual[0]), list(pred[0]), labels=[0, 1])
 print('\n'.join([''.join(['{:4}'.format(item) for item in row]) for row in cm]))
 #confusionmatrix = np.matrix(cm)
 def perf_measure(ans, conf_list):
@@ -271,17 +212,22 @@ tp,fp,tn,fn=perf_measure(cm, conf_list)
 final_accuracy =0.0
 final_precision = 0.0
 final_recall = 0.0
+acc = np.diag(cm)/np.sum(cm)
+acc *= 100
+acc = sum(acc)
 
+print("Testing Accuracy", round(acc,2))
+print()
 
 for i in range(len(conf_list)):
     accuracy=(tp[i]+tn[i])/(tp[i]+tn[i]+fp[i]+fn[i]) * 100
     precision = tp[i] / (tp[i]+fp[i]) * 100
     recall = tp[i] / (tp[i]+fn[i]) * 100
     Fscore = 2*(precision*recall)/(precision+recall)
-    print("Precision of ",conf_list[i],": ",precision,sep="")
-    print("Recall of ",conf_list[i],": ",recall,sep="")
-    print("F-Score of ",conf_list[i],": ",Fscore,sep="")
-    print("Accuracy w.r.t. ",conf_list[i],": ",accuracy,sep="")
+    print("Precision of ",conf_list[i],": ",round(precision,2),sep="")
+    print("Recall of ",conf_list[i],": ",round(recall,2),sep="")
+    print("F-Score of ",conf_list[i],": ",round(Fscore,2),sep="")
+    print("Accuracy w.r.t. ",conf_list[i],": ",round(accuracy,2),sep="")
     print()
     final_precision+=precision
     final_recall+=recall
@@ -289,3 +235,51 @@ for i in range(len(conf_list)):
     
 
 cm2 = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+def plot_confusion_matrix(cm,
+                          target_names,
+                          title='Confusion matrix',
+                          cmap=None,
+                          normalize=False):
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    plt.figure(figsize=(6, 4))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names, rotation=45)
+        plt.yticks(tick_marks, target_names)
+    '''
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    '''
+    thresh = cm.max() / 2
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        if normalize:
+            plt.text(j, i, "{:0.4f}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     verticalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+        else:
+            plt.text(j, i, "{}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     verticalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    b, t = plt.ylim() # discover the values for bottom and top
+    b += 0.5 # Add 0.5 to the bottom
+    t -= 0.5 # Subtract 0.5 from the top
+    plt.ylim(b, t)
+    plt.show()
+    
+plot_confusion_matrix(cm, conf_list)
+plot_confusion_matrix(cm2, conf_list, normalize=True, cmap='Reds')

@@ -28,7 +28,7 @@ AReLU.set_kn(0.82, 1.12)
 seed = 1
 rng = np.random.RandomState(seed)
 
-phL_EC = pd.read_csv('pHL_EC.csv')
+phL_EC = pd.read_csv('../Datasets/pHL_EC.csv')
 
 
 

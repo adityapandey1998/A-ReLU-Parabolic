@@ -59,7 +59,7 @@ ReLU        - 30.77, 98.46, 28.57
 seed = 1
 rng = np.random.RandomState(seed)
 
-phL_EC = pd.read_csv('pHL_EC.csv')
+phL_EC = pd.read_csv('../Datasets/pHL_EC.csv')
 phL_EC.drop(['Index','P. Name'], axis=1, inplace=True)
 phL_EC['P. Habitable Class'] = phL_EC['P. Habitable Class'].astype(str)
 #phL_EC = phL_EC.loc[phL_EC['P. Habitable Class'].isin(["non-habitable", "mesoplanet", "psychroplanet"])]

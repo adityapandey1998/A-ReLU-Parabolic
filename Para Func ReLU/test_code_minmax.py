@@ -51,7 +51,7 @@ ReLU        - 80.00, 99.49, 49.99
 seed = 1
 rng = np.random.RandomState(seed)
 
-phL_EC = pd.read_csv('pHL_EC.csv')
+phL_EC = pd.read_csv('../Datasets/pHL_EC.csv')
 phL_EC.drop(['Index','P. Name'], axis=1, inplace=True)
 phL_EC['P. Habitable Class'] = phL_EC['P. Habitable Class'].astype(str)
 #phL_EC = phL_EC.loc[phL_EC['P. Habitable Class'].isin(["non-habitable", "mesoplanet", "psychroplanet"])]
@@ -249,11 +249,6 @@ with tf.Session() as sess:
 '''
     
 #pred = list(pred[0])
-    
-fig = plt.figure()
-ax = plt.axes()
-
-ax.plot(loss_vals[0], np.clip(loss_vals[1], 0, 1000))
 #ax.plot(loss_vals2[0], np.clip(loss_vals2[1], 0, 1000))
 
 
@@ -303,37 +298,18 @@ for i in range(len(conf_list)):
     final_recall+=recall
     final_accuracy+=accuracy
     
-
 cm2 = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-'''
-plot_confusion_matrix(cm, conf_list)
-
-cm2 = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-fig = plt.figure()
-ax = fig.add_subplot(111)
-cax = ax.matshow(cm2)
-plt.title('Confusion matrix of the classifier')
-fig.colorbar(cax)
-ax.set_xticklabels([''] + conf_list)
-ax.set_yticklabels([''] + conf_list)
-plt.xlabel('Predicted')
-plt.ylabel('True')
-plt.show()
-'''
 
 def plot_confusion_matrix(cm,
                           target_names,
                           title='Confusion matrix',
                           cmap=None,
-                          normalize=True):
-
-    accuracy = np.trace(cm) / np.sum(cm).astype('float')
-    misclass = 1 - accuracy
+                          normalize=False):
 
     if cmap is None:
         cmap = plt.get_cmap('Blues')
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
@@ -342,26 +318,32 @@ def plot_confusion_matrix(cm,
         tick_marks = np.arange(len(target_names))
         plt.xticks(tick_marks, target_names, rotation=45)
         plt.yticks(tick_marks, target_names)
-
+    '''
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-
-
-    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+    '''
+    thresh = cm.max() / 2
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         if normalize:
             plt.text(j, i, "{:0.4f}".format(cm[i, j]),
                      horizontalalignment="center",
+                     verticalalignment="center",
                      color="white" if cm[i, j] > thresh else "black")
         else:
-            plt.text(j, i, "{:,}".format(cm[i, j]),
+            plt.text(j, i, "{}".format(cm[i, j]),
                      horizontalalignment="center",
+                     verticalalignment="center",
                      color="white" if cm[i, j] > thresh else "black")
 
 
     plt.tight_layout()
     plt.ylabel('True label')
-    plt.xlabel('Predicted label\naccuracy={:0.4f}; misclass={:0.4f}'.format(accuracy, misclass))
+    plt.xlabel('Predicted label')
+    b, t = plt.ylim() # discover the values for bottom and top
+    b += 0.5 # Add 0.5 to the bottom
+    t -= 0.5 # Subtract 0.5 from the top
+    plt.ylim(b, t)
     plt.show()
     
-#plot_confusion_matrix(cm2, conf_list)
+plot_confusion_matrix(cm, conf_list)
+plot_confusion_matrix(cm2, conf_list, normalize=True)

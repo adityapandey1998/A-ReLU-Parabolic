@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 17 21:30:30 2020
-
 @author: adityapandey
 """
+import os
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+import itertools
 from sklearn.metrics import confusion_matrix
-
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-import Para_Func_ReLU
-Para_Func_ReLU.set_k(k = 1.25)
+import Generic_Para_Func
 
 seed = 1
 
@@ -49,20 +50,9 @@ biases = {
     'hidden2': tf.Variable(tf.random_normal([hidden_num_units2], seed=seed)),
     'output': tf.Variable(tf.random_normal([output_num_units], seed=seed))
 }
-'''
-weights = {
-    'hidden1': tf.Variable(tf.random_uniform([input_num_units, hidden_num_units1], seed=seed)),
-    'output': tf.Variable(tf.random_uniform([hidden_num_units1, output_num_units], seed=seed))
-}
-
-biases = {
-    'hidden1': tf.Variable(tf.random_uniform([hidden_num_units1], seed=seed)),
-    'output': tf.Variable(tf.random_uniform([output_num_units], seed=seed))
-}
-'''
 
 hidden_layer1 = tf.add(tf.matmul(x, weights['hidden1']), biases['hidden1'])
-hidden_layer1 = Para_Func_ReLU.tf_para_func(hidden_layer1)
+hidden_layer1 = Generic_Para_Func.tf_generic_para_func(hidden_layer1)
 
 output_layer = tf.add(tf.matmul(hidden_layer1, weights['output']), biases['output'])
 
@@ -80,7 +70,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
-display_step = 50
+display_step = 20
 
 pred = []
 actual = []
@@ -163,3 +153,52 @@ for i in range(len(conf_list)):
     final_accuracy+=accuracy
 
 '''
+
+cm2 = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+def plot_confusion_matrix(cm,
+                          target_names,
+                          title='Confusion matrix',
+                          cmap=None,
+                          normalize=False):
+
+    if cmap is None:
+        cmap = plt.get_cmap('Blues')
+
+    plt.figure(figsize=(6, 4))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+
+    if target_names is not None:
+        tick_marks = np.arange(len(target_names))
+        plt.xticks(tick_marks, target_names, rotation=45)
+        plt.yticks(tick_marks, target_names)
+    '''
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    '''
+    thresh = cm.max() / 2
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        if normalize:
+            plt.text(j, i, "{:0.4f}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     verticalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+        else:
+            plt.text(j, i, "{}".format(cm[i, j]),
+                     horizontalalignment="center",
+                     verticalalignment="center",
+                     color="white" if cm[i, j] > thresh else "black")
+
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    b, t = plt.ylim() # discover the values for bottom and top
+    b += 0.5 # Add 0.5 to the bottom
+    t -= 0.5 # Subtract 0.5 from the top
+    plt.ylim(b, t)
+    plt.show()
+    
+plot_confusion_matrix(cm, conf_list, cmap='Reds')

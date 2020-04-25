@@ -14,8 +14,8 @@ import Leaky_AReLU as AReLU
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-#AReLU.set_kn(1.0, 1.0)
-AReLU.set_kn(0.94, 1.1)
+AReLU.set_kn(1.0, 1.0)
+#AReLU.set_kn(0.94, 1.1)
 #AReLU.set_kn(1.06, 1.1)
 
 seed = 1
@@ -33,10 +33,10 @@ x = tf.placeholder(tf.float32, [None, input_num_units])
 y = tf.placeholder(tf.float32, [None, output_num_units])
 
 # set remaining variables
-epochs = 200
+epochs = 400
 #batch_size = X_train.shape[0]
-batch_size = 128
-learning_rate = 0.2
+batch_size = 256
+learning_rate = 0.02
 
 ### define weights and biases of the neural network (refer this article if you don't understand the terminologies)
 
@@ -111,9 +111,11 @@ with tf.Session() as sess:
     print("Optimization Finished!")
 
     # Calculate accuracy for MNIST test images
-    print("Testing Accuracy:", \
-        sess.run(accuracy, feed_dict={x: mnist.test.images,
-                                      y: mnist.test.labels}))
+    t_loss, t_acc = sess.run([loss_op, accuracy], feed_dict={x: mnist.test.images,
+                                      y: mnist.test.labels})
+    print("Testing Loss= " + \
+          "{:.4f}".format(loss) + ", Testing Accuracy= " + \
+          "{:.3f}".format(acc))
     
     pred.append(tf.argmax(output_layer, 1).eval({x: mnist.test.images,
                                       y: mnist.test.labels}))

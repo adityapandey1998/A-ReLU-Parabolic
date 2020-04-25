@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Feb 17 21:30:30 2020
+Created on Wed Mar 25 00:01:49 2020
 
 @author: adityapandey
 """
-
 
 import tensorflow as tf
 from sklearn.metrics import confusion_matrix
@@ -13,8 +12,7 @@ from sklearn.metrics import confusion_matrix
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-import Para_Func_ReLU
-Para_Func_ReLU.set_k(k = 1.25)
+import Abs_Func
 
 seed = 1
 
@@ -49,20 +47,9 @@ biases = {
     'hidden2': tf.Variable(tf.random_normal([hidden_num_units2], seed=seed)),
     'output': tf.Variable(tf.random_normal([output_num_units], seed=seed))
 }
-'''
-weights = {
-    'hidden1': tf.Variable(tf.random_uniform([input_num_units, hidden_num_units1], seed=seed)),
-    'output': tf.Variable(tf.random_uniform([hidden_num_units1, output_num_units], seed=seed))
-}
-
-biases = {
-    'hidden1': tf.Variable(tf.random_uniform([hidden_num_units1], seed=seed)),
-    'output': tf.Variable(tf.random_uniform([output_num_units], seed=seed))
-}
-'''
 
 hidden_layer1 = tf.add(tf.matmul(x, weights['hidden1']), biases['hidden1'])
-hidden_layer1 = Para_Func_ReLU.tf_para_func(hidden_layer1)
+hidden_layer1 = Abs_Func.tf_abs_func(hidden_layer1)
 
 output_layer = tf.add(tf.matmul(hidden_layer1, weights['output']), biases['output'])
 
